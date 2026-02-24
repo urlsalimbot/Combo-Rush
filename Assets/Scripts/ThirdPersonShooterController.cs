@@ -14,7 +14,7 @@ public class ThirdPersonShooterController : MonoBehaviour
 
     [SerializeField] private float fireCooldownDuration = 1.0f;
 
-    private float currFireCooldown = 0f; 
+    private float currFireCooldown = 0f;
     private ThirdPersonController thirdPersonController;
     private StarterAssetsInputs starterAssetsInputs;
 
@@ -24,11 +24,11 @@ public class ThirdPersonShooterController : MonoBehaviour
         thirdPersonController = GetComponent<ThirdPersonController>();
         starterAssetsInputs = GetComponent<StarterAssetsInputs>();
     }
-    
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
@@ -49,13 +49,13 @@ public class ThirdPersonShooterController : MonoBehaviour
         {
             starterAssetsInputs.fire = false;
             currFireCooldown -= Time.deltaTime;
-  
+
 
         }
 
         // Check for input and if the cooldown is ready
         if (starterAssetsInputs.fire && currFireCooldown <= 0)
-        {            
+        {
             FireRay();
             // Reset the cooldown timer
             currFireCooldown = fireCooldownDuration;
@@ -65,24 +65,17 @@ public class ThirdPersonShooterController : MonoBehaviour
 
     private void FireRay()
     {
-        Vector2 screenCenterPoint = new Vector2(Screen.width/2f, Screen.height/2f);
+        Vector2 screenCenterPoint = new Vector2(Screen.width / 2f, Screen.height / 2f);
         Ray ray = Camera.main.ScreenPointToRay(screenCenterPoint);
-        Transform hitTransform = null;
+        // Transform hitTransform = null;
         if (Physics.Raycast(ray, out RaycastHit raycastHit, 999f, aimColliderMask))
         {
             debugTransform.position = raycastHit.point;
-            hitTransform = raycastHit.transform; 
-        }
 
-        if (hitTransform != null)
-        {
-            if (hitTransform.GetComponent<BulletTarget>() != null)
+            // 2. Use TryGetComponent for better performance and safety
+            if (raycastHit.transform.TryGetComponent<BulletTarget>(out BulletTarget target))
             {
-                Debug.Log("Target Hit");
-            }
-            else
-            {
-                Debug.Log("No Target Hit");
+                target.OnRaycastHit(); // Matches the public method name
             }
         }
     }
