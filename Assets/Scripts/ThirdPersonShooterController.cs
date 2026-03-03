@@ -8,6 +8,8 @@ public class ThirdPersonShooterController : MonoBehaviour
     [SerializeField] private CinemachineCamera aimVirtualCamera;
     [SerializeField] private float normalSens = 1.0f;
     [SerializeField] private float aimSens = 0.65f;
+    [SerializeField] private float normalTime = 1.0f;
+    [SerializeField] private float slowMoTime = 0.25f;
     [SerializeField] private LayerMask aimColliderMask = new LayerMask();
     [SerializeField] private Transform debugTransform;
 
@@ -32,11 +34,14 @@ public class ThirdPersonShooterController : MonoBehaviour
         {
             aimVirtualCamera.gameObject.SetActive(true);
             thirdPersonController.SetSensitivity(aimSens);
+            Time.timeScale = slowMoTime;
+            
         }
         else
         {
             aimVirtualCamera.gameObject.SetActive(false);
             thirdPersonController.SetSensitivity(normalSens);
+            Time.timeScale = normalTime;
         }
 
         if (currFireCooldown > 0)

@@ -21,7 +21,7 @@ public class UIManager : MonoBehaviour
     }
     public void SetMultiplierDisplay(float display)
     {
-        multiplierDisplay.text = $"{display}";
+        multiplierDisplay.text = $"Score x{display}";
     }
 
     public void DisableComboDisplay()
