@@ -35,19 +35,22 @@ public class ThirdPersonShooterController : MonoBehaviour
             aimVirtualCamera.gameObject.SetActive(true);
             thirdPersonController.SetSensitivity(aimSens);
             Time.timeScale = slowMoTime;
-            
+            Time.fixedDeltaTime = 0.02f * Time.timeScale;
+
         }
         else
         {
             aimVirtualCamera.gameObject.SetActive(false);
             thirdPersonController.SetSensitivity(normalSens);
             Time.timeScale = normalTime;
+            Time.fixedDeltaTime = 0.02f * Time.timeScale;
+
         }
 
         if (currFireCooldown > 0)
         {
             starterAssetsInputs.fire = false;
-            currFireCooldown -= Time.deltaTime;
+            currFireCooldown -= Time.unscaledDeltaTime;
 
 
         }
