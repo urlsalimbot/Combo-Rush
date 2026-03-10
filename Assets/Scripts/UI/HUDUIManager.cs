@@ -1,13 +1,15 @@
+using System;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UIManager : MonoBehaviour
+public class HUDUIManager : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI scoreDisplay;
     [SerializeField] private TextMeshProUGUI comboDisplay;
     [SerializeField] private TextMeshProUGUI multiplierDisplay;
+    [SerializeField] private TextMeshProUGUI timeDisplay;
     [SerializeField] private Slider comboSlider;
 
     public void SetScoreDisplay(float display)
@@ -24,6 +26,14 @@ public class UIManager : MonoBehaviour
         multiplierDisplay.text = $"Score x{display}";
     }
 
+    public void SetTimeDisplay(float display)
+    {
+        TimeSpan timeSpan = TimeSpan.FromSeconds(display);
+        string formattedTime = string.Format("{0:D2}:{1:D2}:{2:D2}", timeSpan.Minutes, timeSpan.Seconds, timeSpan.Milliseconds / 10);
+        timeDisplay.text = formattedTime;
+
+    }
+
     public void DisableComboDisplay()
     {
         comboDisplay.text = "";
@@ -37,7 +47,7 @@ public class UIManager : MonoBehaviour
     public void initComboSlider(float maxTime)
     {
         comboSlider.gameObject.SetActive(true);
-        comboSlider.maxValue = maxTime;    
+        comboSlider.maxValue = maxTime;
     }
 
     public void SetComboSlider(float time)

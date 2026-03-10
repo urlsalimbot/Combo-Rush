@@ -1,12 +1,19 @@
-using Unity.VisualScripting;
+using System;
 using UnityEngine;
+using Singletons;
 
-public class GameMaster : MonoBehaviour
+public class GameMaster : Singleton<GameMaster>
 {
-    [SerializeField] private UIManager uimanager;
-    public static GameMaster Instance { get; private set; }
-    public float _score { get; private set; }
 
+    [Header("References")]
+    [SerializeField] private HUDUIManager uimanager;
+    [SerializeField] private Leaderboard leaderboard;
+
+    [Header("Game Parameters")]
+    [SerializeField] private float gameDuration = 90f;
+
+    private float currGameDuration;
+    public float _score { get; private set; }
 
     [Header("Combo Parameters")]
     [SerializeField] private float comboDuration = 7f;
@@ -20,18 +27,6 @@ public class GameMaster : MonoBehaviour
     private float currComboDuration;
     private int incomingScore;
 
-
-    private void Awake()
-    {
-        // Simple Singleton enforcement
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-        DontDestroyOnLoad(gameObject); // Optional: persists across scenes
-    }
 
     private void OnEnable()
     {
@@ -71,12 +66,12 @@ public class GameMaster : MonoBehaviour
         _mult = currMultiplicator;
         _score += incomingScore * _mult.Value;
 
-        setDisplay(_chits, _mult, _score);
+        setDisplay(_chits, _mult);
 
 
     }
 
-    private void setDisplay(int? cHits = null, float? multi = null, float? score = null)
+    private void setDisplay(int? cHits = null, float? multi = null)
     {
         if (cHits.HasValue)
         {
@@ -89,7 +84,7 @@ public class GameMaster : MonoBehaviour
         if (multi.HasValue) uimanager.SetMultiplierDisplay(multi.Value);
         else uimanager.DisableMultiplierDisplay();
 
-        if (score.HasValue) uimanager.SetScoreDisplay(score.Value);
+        uimanager.SetScoreDisplay(_score);
 
     }
 
@@ -97,12 +92,32 @@ public class GameMaster : MonoBehaviour
     void Start()
     {
 
-
+        currGameDuration = gameDuration;
+        currComboDuration = comboDuration;
+        _score = 0;
+        setDisplay();
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (StateMaster.Instance.CurrentState != GameState.Playing) return;
+
+        if (currGameDuration <= 0)
+        {
+            Debug.Log("Game Over!");
+            leaderboard.AddEntry(StateMaster.Instance.PlayerName, (int)_score); // Example: Add to leaderboard
+            StateMaster.Instance.SetState(GameState.GameOver);
+            return;
+        }
+
+        if (currGameDuration > 0)
+        {
+            currGameDuration -= Time.fixedUnscaledDeltaTime;
+            uimanager.SetTimeDisplay(currGameDuration);
+            Debug.Log($"Time Remaining: {currGameDuration}");
+        }
+
         if (isComboing && currComboDuration > 0)
         {
             currComboDuration -= Time.deltaTime;

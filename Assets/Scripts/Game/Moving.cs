@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class Moving : MonoBehaviour
 {
+    
     public Vector3 moveDistance; // Distance to move
     public float speed = 2f;
     private Vector3 startPos;
