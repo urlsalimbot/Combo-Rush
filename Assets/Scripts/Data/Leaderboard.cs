@@ -11,9 +11,8 @@ public class Leaderboard : MonoBehaviour
     [SerializeField] private Transform container;
     [SerializeField] private GameObject rowPrefab;
 
-
     private string savePath;
-    private string encryptionKey = "ComboRush#1LETSGO"; // Must be 16, 24, or 32 chars
+    private string encryptionKey = "ComboRush1LETSGO"; // Must be 16, 24, or 32 chars
     private LeaderboardData data = new LeaderboardData();
 
     void Awake()
@@ -84,14 +83,21 @@ public class Leaderboard : MonoBehaviour
 
     public void RefreshDisplay()
     {
-        // Clear old rows
-        foreach (Transform child in container) Destroy(child.gameObject);
+        if (container == null || rowPrefab == null) return;
 
-        // Get the data (make 'data' public or add a getter)
+        // Clear old rows
+        foreach (Transform child in container)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // Loop through the loaded data
         foreach (var entry in data.entries)
         {
             GameObject go = Instantiate(rowPrefab, container);
-            // Assuming your prefab has a script to set text
+
+            // Pass name and score. 
+            // Note: If you don't have entry.date in your ScoreEntry class, remove it here.
             go.GetComponent<LeaderboardRow>().Setup(entry.playerName, entry.score, entry.date);
         }
     }

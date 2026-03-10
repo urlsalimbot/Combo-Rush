@@ -30,6 +30,16 @@ public class ThirdPersonShooterController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (StateMaster.Instance.CurrentState != GameState.Playing) return;
+
+        if (starterAssetsInputs.pause && StateMaster.Instance.CurrentState == GameState.Playing)
+        {
+            StateMaster.Instance.SetState(GameState.Paused);
+            return;
+        }
+
+
+
         if (starterAssetsInputs.aim)
         {
             aimVirtualCamera.gameObject.SetActive(true);

@@ -10,6 +10,8 @@ public class MenuUIManager : MonoBehaviour
     [SerializeField] private Button resumeButton;
     [SerializeField] private Button restartButton;
     [SerializeField] private Button mainMenuButton;
+    [SerializeField] private Leaderboard leaderboard;
+    [SerializeField] private GameObject leaderboardpanel;
 
 
     public void Setup()
@@ -49,9 +51,14 @@ public class MenuUIManager : MonoBehaviour
     }
     public void OnLeaderboardClicked()
     {
-        // Reset time scale just in case your manager doesn't do it on scene load
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        if (leaderboardpanel.activeSelf)
+        {
+            leaderboardpanel.SetActive(false);
+            return; 
+        }
+        ; // Prevent multiple opens  
+        leaderboard.RefreshDisplay();
+        leaderboardpanel.SetActive(true);
     }
 
     public void OnMainMenuClicked(string mainMenuSceneName)

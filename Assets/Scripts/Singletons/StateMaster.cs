@@ -62,6 +62,7 @@ public class StateMaster : Singleton<StateMaster>
         // Check if we are coming from Unstarted or Paused and moving to Playing
         if (newState == GameState.Playing && (CurrentState == GameState.Unstarted || CurrentState == GameState.Paused))
         {
+            mainmenucamera.gameObject.SetActive(false);
             StartCoroutine(StartCountdownRoutine());
             return; // Exit here; the Coroutine will call SetState(Playing) at the end
         }
