@@ -16,15 +16,16 @@ public class MenuUIManager : MonoBehaviour
 
     public void Setup()
     {
-        if (StateMaster.Instance.CurrentState == GameState.Unstarted)
+        if (!StateMaster.Instance.IsPlaying)
         {
             startButton.gameObject.SetActive(true);
             resumeButton.gameObject.SetActive(false);
             restartButton.gameObject.SetActive(false);
             mainMenuButton.gameObject.SetActive(false);
         }
-        else if (StateMaster.Instance.CurrentState == GameState.Playing)
+        if (StateMaster.Instance.IsPlaying)
         {
+            Debug.Log("Configuring Menu for Paused State");
             startButton.gameObject.SetActive(false);
             resumeButton.gameObject.SetActive(true);
             restartButton.gameObject.SetActive(true);
@@ -61,10 +62,10 @@ public class MenuUIManager : MonoBehaviour
         leaderboardpanel.SetActive(true);
     }
 
-    public void OnMainMenuClicked(string mainMenuSceneName)
+    public void OnMainMenuClicked()
     {
         Time.timeScale = 1f;
-        // SceneManager.LoadScene(mainMenuSceneName);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name); // Assuming main menu is the first scene
     }
 
     public void OnQuitClicked()

@@ -31,10 +31,33 @@ public class GameMaster : Singleton<GameMaster>
     private void OnEnable()
     {
         BulletTarget.OnTargetHit += TargetHit;
+        StateMaster.Instance.OnGameStarted += OnGameStarted;
+        StateMaster.Instance.OnGameOver += OnGameOver;
     }
+
     private void OnDisable()
     {
         BulletTarget.OnTargetHit -= TargetHit;
+        StateMaster.Instance.OnGameStarted -= OnGameStarted;
+        StateMaster.Instance.OnGameOver -= OnGameOver;
+    }
+
+    private void OnGameStarted()
+    {
+        currGameDuration = gameDuration;
+        currComboDuration = comboDuration;
+        _score = 0;
+        setDisplay();
+        Debug.Log("Game Started - Timers Reset");
+    }
+
+    private void OnGameOver()
+    {
+        Debug.Log("Game Over - Submitting Score");
+        // Calculate total combos and final multiplier for submission
+        int totalCombos = comboHits;
+        float finalMultiplier = currMultiplicator;
+        Instance.SubmitScore((int)_score, totalCombos, finalMultiplier);
     }
 
     private void TargetHit(int addScore)
@@ -88,39 +111,28 @@ public class GameMaster : Singleton<GameMaster>
 
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-
-        currGameDuration = gameDuration;
-        currComboDuration = comboDuration;
-        _score = 0;
-        setDisplay();
-    }
-
     // Update is called once per frame
     void Update()
     {
-        if (StateMaster.Instance.CurrentState != GameState.Playing) return;
+        if (!StateMaster.Instance.IsPlaying) return;
 
         if (currGameDuration <= 0)
         {
             Debug.Log("Game Over!");
-            leaderboard.AddEntry(StateMaster.Instance.PlayerName, (int)_score); // Example: Add to leaderboard
-            StateMaster.Instance.SetState(GameState.GameOver);
+            StateMaster.Instance.TriggerGameOver();
             return;
         }
 
         if (currGameDuration > 0)
         {
-            currGameDuration -= Time.fixedUnscaledDeltaTime;
+            currGameDuration -= Time.unscaledDeltaTime;
             uimanager.SetTimeDisplay(currGameDuration);
             Debug.Log($"Time Remaining: {currGameDuration}");
         }
 
         if (isComboing && currComboDuration > 0)
         {
-            currComboDuration -= Time.deltaTime;
+            currComboDuration -= Time.unscaledDeltaTime;
             uimanager.SetComboSlider(currComboDuration);
         }
 
@@ -134,5 +146,11 @@ public class GameMaster : Singleton<GameMaster>
             comboHits = 0;
             currMultiplicator = 1;
         }
+    }
+
+    public void SubmitScore(int finalScore, int totalCombos, float finalMultiplier)
+    {
+        leaderboard.AddEntry(StateMaster.Instance.PlayerName, (int)_score);
+        Debug.Log($"Submitting Score: {finalScore} with Combos: {totalCombos} and Multiplier: {finalMultiplier} for Player: {StateMaster.Instance.PlayerName}");
     }
 }

@@ -4,8 +4,11 @@ using UnityEngine;
 
 public class BulletTarget : MonoBehaviour
 {
+
+    [Header("Settings")]
+    [SerializeField] private int scoreValue = 25;
     public static event Action<int> OnTargetHit;
-    
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -20,8 +23,8 @@ public class BulletTarget : MonoBehaviour
 
     public void OnRaycastHit()
     {
-        Debug.Log("Raycast Hit");
-        OnTargetHit?.Invoke(25);
+        // Debug.Log("Raycast Hit");
+        OnTargetHit?.Invoke(scoreValue);
         Destroy(gameObject);
     }
 }

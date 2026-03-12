@@ -158,7 +158,7 @@ namespace StarterAssets
 
         private void Update()
         {
-            if (StateMaster.Instance.CurrentState != GameState.Playing) return;
+            if (!StateMaster.Instance.IsPlaying) return;
 
             _hasAnimator = TryGetComponent(out _animator);
 
