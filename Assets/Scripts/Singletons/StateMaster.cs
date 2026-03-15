@@ -5,15 +5,21 @@ using System.Collections;
 using TMPro;
 using Unity.Cinemachine;
 
-public enum GameState { Unstarted, Playing, Paused, GameOver, CountingDown }
+public enum GameState { Loading, Unstarted, Playing, Paused, GameOver, CountingDown }
 
 /// <summary>
 /// Central state machine manager for game flow control.
 /// Handles state transitions, UI visibility, time scale, and cursor management.
-/// This is a scene-specific singleton (does not persist across scene loads).
+/// This is a scene-specific singleton (destroyed on scene unload).
 /// </summary>
 public class StateMaster : Singleton<StateMaster>
 {
+    protected override bool PersistAcrossScenes => false;
+
+    private const float DefaultFixedDeltaTime = 0.02f;
+    private const int FlashErrorIterations = 3;
+    private const float FlashErrorDuration = 0.1f;
+
     // Events for state changes - allows decoupled reactions from other systems
     public event Action<GameState> OnStateChanged;
     public event Action OnGameStarted;
@@ -21,10 +27,8 @@ public class StateMaster : Singleton<StateMaster>
     public event Action OnGameResumed;
     public event Action OnGameOver;
 
-    protected override bool PersistAcrossScenes => true;
-
     [Header("UI Panels")]
-    [SerializeField] private MenuUIManager MenuPanel;
+    [SerializeField] private MenuUIManager menuPanel;
     [SerializeField] private HUDUIManager gameplayHUD;
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private TextMeshProUGUI countdownText;
@@ -33,8 +37,8 @@ public class StateMaster : Singleton<StateMaster>
     [SerializeField] private TextMeshProUGUI errorText;
 
     [Header("References")]
-    [SerializeField] private CinemachineCamera mainmenucamera;
-    [SerializeField] private CinemachineBrain maincamera;
+    [SerializeField] private CinemachineCamera mainMenuCamera;
+    [SerializeField] private CinemachineBrain mainCamera;
 
     [Header("Settings")]
     [SerializeField] private int startCountdownValue = 3;
@@ -50,18 +54,26 @@ public class StateMaster : Singleton<StateMaster>
 
     private void Start()
     {
+        Debug.Log("[StateMaster] Start() called - Initializing...");
+        
+        // Force reset time and cursor before initializing
+        Time.timeScale = 1f;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
         SetState(GameState.Unstarted);
         InitializeUI();
-        ApplyStateEffects(CurrentState, CurrentState); // Ensure initial state effects are applied
+        
+        Debug.Log("[StateMaster] Initialization complete. Current state: " + CurrentState);
     }
 
     private void InitializeUI()
     {
-        MenuPanel.gameObject.SetActive(true);
-        MenuPanel.Setup();
-        gameplayHUD.gameObject.SetActive(false);
-        gameOverPanel.SetActive(false);
-        countdownText.gameObject.SetActive(false);
+        OnStateChanged?.Invoke(CurrentState);
+        if (menuPanel != null) menuPanel.gameObject.SetActive(true);
+        if (gameplayHUD != null) gameplayHUD.gameObject.SetActive(false);
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (countdownText != null) countdownText.gameObject.SetActive(false);
     }
 
     /// <summary>
@@ -75,7 +87,7 @@ public class StateMaster : Singleton<StateMaster>
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(nameInputField.text))
+        if (nameInputField == null || string.IsNullOrWhiteSpace(nameInputField.text))
         {
             StopCoroutine(nameof(FlashErrorRoutine));
             StartCoroutine(FlashErrorRoutine());
@@ -85,8 +97,10 @@ public class StateMaster : Singleton<StateMaster>
         PlayerName = nameInputField.text.Trim();
         nameInputField.gameObject.SetActive(false);
 
-        mainmenucamera.gameObject.SetActive(false);
-        // Begin countdown sequence which transitions to Playing
+        if (mainMenuCamera != null)
+        {
+            mainMenuCamera.gameObject.SetActive(false);
+        }
         BeginCountdownSequence();
     }
 
@@ -122,31 +136,23 @@ public class StateMaster : Singleton<StateMaster>
     /// </summary>
     private bool IsValidTransition(GameState from, GameState to)
     {
-        // Allow any transition from Unstarted
-        if (from == GameState.Unstarted)
-            return to == GameState.Playing || to == GameState.CountingDown;
+        switch (from)
+        {
+            case GameState.Unstarted:
+                return to == GameState.Playing || to == GameState.CountingDown;
 
-        // Allow transitions to Paused only from Playing
-        if (to == GameState.Paused)
-            return from == GameState.Playing;
+            case GameState.Paused:
+                return to == GameState.Playing || to == GameState.GameOver || to == GameState.CountingDown;
 
-        // Allow transitions from Paused to Playing or GameOver
-        if (from == GameState.Paused)
-            return to == GameState.Playing || to == GameState.GameOver;
+            case GameState.GameOver:
+                return to == GameState.Unstarted;
 
-        // Allow transitions to GameOver from Playing or Paused
-        if (to == GameState.GameOver)
-            return from == GameState.Playing || from == GameState.Paused;
+            case GameState.Playing:
+                return to == GameState.Paused || to == GameState.GameOver || to == GameState.CountingDown;
 
-        // Allow transitions from GameOver to Unstarted (reset)
-        if (from == GameState.GameOver)
-            return to == GameState.Unstarted;
-
-        // Default: allow transitions from Playing
-        if (from == GameState.Playing)
-            return to == GameState.Paused || to == GameState.GameOver || to == GameState.CountingDown;
-
-        return true;
+            default:
+                return true;
+        }
     }
 
     /// <summary>
@@ -154,6 +160,8 @@ public class StateMaster : Singleton<StateMaster>
     /// </summary>
     private void ApplyStateEffects(GameState newState, GameState previousState)
     {
+        Debug.Log($"Applying state effects for: {newState}");
+
         // 1. Time Scale - only running during Playing state
         Time.timeScale = (newState == GameState.Playing) ? 1f : 0f;
 
@@ -163,31 +171,41 @@ public class StateMaster : Singleton<StateMaster>
         Cursor.lockState = cursorVisible ? CursorLockMode.None : CursorLockMode.Locked;
 
         // 3. UI Visibility
-        MenuPanel.gameObject.SetActive(newState == GameState.Unstarted || newState == GameState.Paused);
-        gameplayHUD.gameObject.SetActive(newState == GameState.Playing || newState == GameState.CountingDown);
-        gameOverPanel.SetActive(newState == GameState.GameOver);
-
-        // 4. Camera handling - disable menu camera during countdown and playing
-        if (newState == GameState.Unstarted)
+        if (menuPanel != null)
         {
-            mainmenucamera.gameObject.SetActive(true);
+            menuPanel.gameObject.SetActive(newState == GameState.Unstarted || newState == GameState.Paused);
         }
-        else if (newState == GameState.CountingDown || newState == GameState.Playing || newState == GameState.GameOver)
+        if (gameplayHUD != null)
         {
-            mainmenucamera.gameObject.SetActive(false);
+            gameplayHUD.gameObject.SetActive(newState == GameState.Playing || newState == GameState.CountingDown);
+        }
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(newState == GameState.GameOver);
+        }
+
+        // 4. Camera handling
+        switch (newState)
+        {
+            case GameState.Unstarted:
+                if (mainMenuCamera != null)
+                {
+                    mainMenuCamera.gameObject.SetActive(true);
+                }
+                break;
+
+            case GameState.CountingDown:
+            case GameState.Playing:
+            case GameState.GameOver:
+                if (mainMenuCamera != null)
+                {
+                    mainMenuCamera.gameObject.SetActive(false);
+                }
+                break;
         }
 
         // 5. State-specific setup
-        if (newState == GameState.Unstarted)
-        {
-            MenuPanel.Setup();
-        }
-        else if (newState == GameState.Paused)
-        {
-            MenuPanel.Setup();
-            OnGamePaused?.Invoke();
-        }
-        else if (newState == GameState.Playing && previousState == GameState.Paused)
+        if (newState == GameState.Playing && previousState == GameState.Paused)
         {
             OnGameResumed?.Invoke();
         }
@@ -205,10 +223,10 @@ public class StateMaster : Singleton<StateMaster>
         if (_isTransitioning) return;
         _isTransitioning = true;
 
-        StartCoroutine(StartCountdownRoutine());
+        StartCoroutine(StartCountdownRoutine(CurrentState));
     }
 
-    private IEnumerator StartCountdownRoutine()
+    private IEnumerator StartCountdownRoutine(GameState previousState)
     {
         // Manually handle CountingDown state (bypass SetState to control camera blend timing)
         CurrentState = GameState.CountingDown;
@@ -216,31 +234,61 @@ public class StateMaster : Singleton<StateMaster>
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
 
-        MenuPanel.gameObject.SetActive(false);
-        countdownText.gameObject.SetActive(true);
-        gameplayHUD.gameObject.SetActive(true);
-        
-        // Disable menu camera FIRST to allow player camera to blend in
-        mainmenucamera.Priority= 0; // Lower priority to allow main camera to take over
-        mainmenucamera.gameObject.SetActive(false); // Deactivate menu camera to trigger blend
+        if (menuPanel != null) menuPanel.gameObject.SetActive(false);
+        if (countdownText != null) countdownText.gameObject.SetActive(true);
+        if (gameplayHUD != null) gameplayHUD.gameObject.SetActive(true);
 
-        // Configure blend for smooth camera transition
-        CinemachineBlendDefinition originalBlend = maincamera.DefaultBlend;
-        maincamera.DefaultBlend = new CinemachineBlendDefinition(CinemachineBlendDefinition.Styles.EaseInOut, 2.0f);
-
-        OnStateChanged?.Invoke(CurrentState);
-        Debug.Log($"Game State: {GameState.Unstarted} -> {GameState.CountingDown}");
-
-        float timer = startCountdownValue;
-        while (timer > 0)
+        // Only handle camera when transitioning from Unstarted (not from Paused)
+        if (previousState == GameState.Unstarted)
         {
-            countdownText.text = Mathf.CeilToInt(timer).ToString();
-            yield return new WaitForSecondsRealtime(1f);
-            timer--;
-        }
+            if (mainMenuCamera != null)
+            {
+                mainMenuCamera.Priority = 0;
+                mainMenuCamera.gameObject.SetActive(false);
+            }
 
-        countdownText.gameObject.SetActive(false);
-        maincamera.DefaultBlend = originalBlend;
+            if (mainCamera != null)
+            {
+                CinemachineBlendDefinition originalBlend = mainCamera.DefaultBlend;
+                mainCamera.DefaultBlend = new CinemachineBlendDefinition(CinemachineBlendDefinition.Styles.EaseInOut, 2.0f);
+
+                OnStateChanged?.Invoke(CurrentState);
+                Debug.Log($"Game State: {previousState} -> {GameState.CountingDown}");
+
+                float timer = startCountdownValue;
+                while (timer > 0)
+                {
+                    if (countdownText != null)
+                    {
+                        countdownText.text = Mathf.CeilToInt(timer).ToString();
+                    }
+                    yield return new WaitForSecondsRealtime(1f);
+                    timer--;
+                }
+
+                if (countdownText != null) countdownText.gameObject.SetActive(false);
+                mainCamera.DefaultBlend = originalBlend;
+            }
+        }
+        else
+        {
+            // Transitioning from Paused - simpler countdown without camera changes
+            OnStateChanged?.Invoke(CurrentState);
+            Debug.Log($"Game State: {previousState} -> {GameState.CountingDown}");
+
+            float timer = startCountdownValue;
+            while (timer > 0)
+            {
+                if (countdownText != null)
+                {
+                    countdownText.text = Mathf.CeilToInt(timer).ToString();
+                }
+                yield return new WaitForSecondsRealtime(1f);
+                timer--;
+            }
+
+            if (countdownText != null) countdownText.gameObject.SetActive(false);
+        }
 
         // Transition to Playing state
         CurrentState = GameState.Playing;
@@ -251,7 +299,16 @@ public class StateMaster : Singleton<StateMaster>
         _isTransitioning = false;
 
         OnStateChanged?.Invoke(CurrentState);
-        OnGameStarted?.Invoke();
+
+        // Only invoke OnGameStarted when starting fresh (not when resuming)
+        if (previousState == GameState.Unstarted)
+        {
+            OnGameStarted?.Invoke();
+        }
+        else
+        {
+            OnGameResumed?.Invoke();
+        }
 
         Debug.Log($"Game State: {GameState.CountingDown} -> {GameState.Playing}");
     }
@@ -263,12 +320,12 @@ public class StateMaster : Singleton<StateMaster>
         errorText.gameObject.SetActive(true);
         errorText.text = "ENTER NAME!";
 
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < FlashErrorIterations; i++)
         {
             errorText.color = Color.red;
-            yield return new WaitForSecondsRealtime(0.1f);
+            yield return new WaitForSecondsRealtime(FlashErrorDuration);
             errorText.color = Color.white;
-            yield return new WaitForSecondsRealtime(0.1f);
+            yield return new WaitForSecondsRealtime(FlashErrorDuration);
         }
 
         errorText.color = Color.red;
@@ -285,20 +342,22 @@ public class StateMaster : Singleton<StateMaster>
             Debug.LogWarning($"Cannot resume from state: {CurrentState}");
             return;
         }
-        SetState(GameState.Playing);
+        BeginCountdownSequence();
     }
 
     /// <summary>
-    /// Pauses the game from playing state.
+    /// Pauses the game from playing state, or resumes if already paused.
     /// </summary>
     public void Pause()
     {
-        if (CurrentState != GameState.Playing)
+        if (CurrentState == GameState.Paused)
         {
-            Debug.LogWarning($"Cannot pause from state: {CurrentState}");
-            return;
+            Resume();
         }
-        SetState(GameState.Paused);
+        else if (CurrentState == GameState.Playing)
+        {
+            SetState(GameState.Paused);
+        }
     }
 
     /// <summary>
@@ -325,15 +384,15 @@ public class StateMaster : Singleton<StateMaster>
             return;
         }
 
-        // Reset all game state
         PlayerName = null;
 
-        // Reset UI
         InitializeUI();
-        nameInputField.gameObject.SetActive(true);
-        nameInputField.text = string.Empty;
+        if (nameInputField != null)
+        {
+            nameInputField.gameObject.SetActive(true);
+            nameInputField.text = string.Empty;
+        }
 
-        // Set state to Unstarted (will handle cursor, camera, time scale)
         SetState(GameState.Unstarted);
     }
 

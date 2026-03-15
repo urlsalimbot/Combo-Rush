@@ -1,15 +1,37 @@
 using UnityEngine;
+using TMPro;
 
 public class LeaderboardRow : MonoBehaviour
 {
-    [SerializeField] private TMPro.TMP_InputField nameText;
-    [SerializeField] private TMPro.TMP_InputField scoreText;
-    [SerializeField] private TMPro.TMP_InputField date;
+    [Header("UI References")]
+    [SerializeField] private TMP_InputField nameText;
+    [SerializeField] private TMP_InputField scoreText;
+    [SerializeField] private TMP_InputField dateText;
 
-    public void Setup(string name, int score, string dateplayed)
+    private void Awake()
     {
-        nameText.text = name;
-        scoreText.text = score.ToString();
-        date.text = dateplayed;
+        if (nameText == null) Debug.LogError("[LeaderboardRow] nameText not assigned!");
+        if (scoreText == null) Debug.LogError("[LeaderboardRow] scoreText not assigned!");
+        if (dateText == null) Debug.LogError("[LeaderboardRow] dateText not assigned!");
+    }
+
+    public void Setup(string name, int score, string datePlayed)
+    {
+        Debug.Log($"[LeaderboardRow] Setup called: {name} - {score} - {datePlayed}");
+        
+        if (nameText != null)
+        {
+            nameText.text = name;
+        }
+
+        if (scoreText != null)
+        {
+            scoreText.text = score.ToString();
+        }
+
+        if (dateText != null)
+        {
+            dateText.text = datePlayed;
+        }
     }
 }

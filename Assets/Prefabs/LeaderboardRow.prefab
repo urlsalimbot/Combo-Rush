@@ -34,7 +34,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.5}
+  m_AnchoredPosition: {x: 0, y: -0.4999962}
   m_SizeDelta: {x: -20, y: -13}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &3650531518919468402
@@ -413,7 +413,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 163.5055, y: 48.905}
+  m_SizeDelta: {x: 168.539, y: 48.76}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6939273085526234570
 CanvasRenderer:
@@ -611,10 +611,10 @@ MonoBehaviour:
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  m_ChildAlignment: 0
+  m_ChildAlignment: 1
   m_Spacing: 0
   m_ChildForceExpandWidth: 1
-  m_ChildForceExpandHeight: 1
+  m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 0
   m_ChildControlHeight: 0
   m_ChildScaleWidth: 0
@@ -634,7 +634,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LeaderboardRow
   nameText: {fileID: 3476750196462911562}
   scoreText: {fileID: 1897647980173806669}
-  date: {fileID: 905266639153389445}
+  dateText: {fileID: 905266639153389445}
 --- !u!1 &5920062600677206235
 GameObject:
   m_ObjectHideFlags: 0
@@ -672,7 +672,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 255.6968, y: 48.9053}
+  m_SizeDelta: {x: 179.5962, y: 48.76}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8392833415535336866
 CanvasRenderer:
@@ -901,7 +901,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 243.1053, y: 48.905}
+  m_SizeDelta: {x: 309.2675, y: 48.76}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1395364648301068078
 CanvasRenderer:

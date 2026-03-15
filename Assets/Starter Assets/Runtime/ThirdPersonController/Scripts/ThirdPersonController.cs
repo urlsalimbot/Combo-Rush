@@ -158,7 +158,7 @@ namespace StarterAssets
 
         private void Update()
         {
-            if (!StateMaster.Instance.IsPlaying) return;
+            if (StateMaster.Instance == null || !StateMaster.Instance.IsPlaying) return;
 
             _hasAnimator = TryGetComponent(out _animator);
 
@@ -169,7 +169,9 @@ namespace StarterAssets
 
         private void LateUpdate()
         {
-           CameraRotation();
+            if (StateMaster.Instance == null || !StateMaster.Instance.IsPlaying) return;
+
+            CameraRotation();
         }
 
         private void AssignAnimationIDs()

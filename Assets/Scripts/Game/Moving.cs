@@ -2,22 +2,36 @@ using UnityEngine;
 
 public class Moving : MonoBehaviour
 {
-    
-    public Vector3 moveDistance; // Distance to move
+    [Header("Movement Settings")]
+    public Vector3 moveOffset = new Vector3(5f, 0f, 0f);
     public float speed = 2f;
-    private Vector3 startPos;
 
-    void Start()
+    private Vector3 _startPos;
+    private Vector3 _endPos;
+
+    private void Start()
     {
-        startPos = transform.position;
-        moveDistance = startPos + new Vector3(startPos.x + 5, startPos.y, startPos.z);
+        _startPos = transform.position;
+        _endPos = _startPos + moveOffset;
     }
 
-
-    void Update()
+    private void Update()
     {
-        // Calculate a value that oscillates between 0 and 1
-        float movement = Mathf.PingPong(Time.time * speed, 1);
-        transform.position = startPos + (moveDistance * movement);
+        float movement = Mathf.PingPong(Time.time * speed, 1f);
+        transform.position = Vector3.Lerp(_startPos, _endPos, movement);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (Application.isPlaying)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(_startPos, _endPos);
+        }
+        else
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(transform.position, transform.position + moveOffset);
+        }
     }
 }

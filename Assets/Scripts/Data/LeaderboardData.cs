@@ -4,19 +4,28 @@ using System.Collections.Generic;
 [Serializable]
 public class LeaderboardData
 {
-    public List<ScoreEntry> entries = new List<ScoreEntry>();
+    public List<ScoreEntry> Entries = new List<ScoreEntry>();
 }
 
 [Serializable]
 public class ScoreEntry
 {
-    public string playerName;
-    public int score;
-    public string date;
-    public ScoreEntry(string name, int s)
+    public string PlayerName;
+    public int Score;
+    public string Date;
+
+    public ScoreEntry(string name, int score)
     {
-        playerName = name;
-        score = s;
-        date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        PlayerName = name;
+        Score = score;
+        Date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+    }
+
+    // Parameterless constructor required for JsonUtility
+    public ScoreEntry()
+    {
+        PlayerName = string.Empty;
+        Score = 0;
+        Date = string.Empty;
     }
 }

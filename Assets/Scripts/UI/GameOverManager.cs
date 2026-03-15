@@ -1,28 +1,63 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class GameOverManager : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private TMP_InputField scoreInputField;
-    [SerializeField] private TMP_InputField combosInputField;
-    [SerializeField] private TMP_InputField multiplierInputField;
+    [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private TextMeshProUGUI combosText;
+    [SerializeField] private TextMeshProUGUI multiplierText;
+    [SerializeField] private Button submitButton;
 
+    private void Awake()
+    {
+        // Ensure StateMaster exists
+        var stateMaster = StateMaster.Instance;
+        if (stateMaster == null)
+        {
+            Debug.LogError("[GameOverManager] StateMaster not found in scene!");
+        }
+    }
 
+    private void OnEnable()
+    {
+        StateMaster.Instance.OnGameOver += HandleGameOver;
+    }
+
+    private void OnDisable()
+    {
+        if (StateMaster.Instance != null)
+        {
+            StateMaster.Instance.OnGameOver -= HandleGameOver;
+        }
+    }
+
+    private void HandleGameOver()
+    {
+        gameObject.SetActive(true);
+    }
 
     public void Setup(int finalScore, int totalCombos, float finalMultiplier)
     {
-        scoreInputField.text = finalScore.ToString();
-        combosInputField.text = totalCombos.ToString();
-        multiplierInputField.text = finalMultiplier.ToString("0.00");
+        scoreText.text = finalScore.ToString();
+        combosText.text = totalCombos.ToString();
+        multiplierText.text = finalMultiplier.ToString("F2");
     }
 
-    public void OnSubmitScoreClicked(Button submitButton)
+    public void OnSubmitScoreClicked()
     {
-        GameMaster.Instance.SubmitScore(int.Parse(scoreInputField.text), int.Parse(combosInputField.text), float.Parse(multiplierInputField.text));
-        submitButton.interactable = false; // Disable the button to prevent multiple submissions
-        submitButton.GetComponentInChildren<TextMeshProUGUI>().text = "Submitted!";
-        Debug.Log($"Submitting Score: {scoreInputField.text} for Player: {StateMaster.Instance.PlayerName}");
+        if (submitButton != null)
+        {
+            submitButton.interactable = false;
+
+            TextMeshProUGUI buttonText = submitButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (buttonText != null)
+            {
+                buttonText.text = "Submitted!";
+            }
+        }
+
+        Debug.Log($"Submitting Score: {scoreText.text} for Player: {StateMaster.Instance.PlayerName}");
     }
 }

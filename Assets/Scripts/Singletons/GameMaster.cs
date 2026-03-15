@@ -4,153 +4,172 @@ using Singletons;
 
 public class GameMaster : Singleton<GameMaster>
 {
+    protected override bool PersistAcrossScenes => false;
 
     [Header("References")]
-    [SerializeField] private HUDUIManager uimanager;
+    [SerializeField] private HUDUIManager uiManager;
     [SerializeField] private Leaderboard leaderboard;
+    [SerializeField] private GameOverManager gameOverManager;
 
     [Header("Game Parameters")]
     [SerializeField] private float gameDuration = 90f;
 
-    private float currGameDuration;
-    public float _score { get; private set; }
-
     [Header("Combo Parameters")]
     [SerializeField] private float comboDuration = 7f;
-    [SerializeField] private float comboMultiplicator = 0.25f;
+    [SerializeField] private float comboMultiplierIncrement = 0.25f;
     [SerializeField] private int comboThreshold = 1;
-    private bool isComboing = false;
 
-    private int comboHits = 0;
-    private float currMultiplicator = 1.0f;
-
-    private float currComboDuration;
-    private int incomingScore;
-
+    private float _currentGameDuration;
+    private float _currentComboDuration;
+    private float _score;
+    private float _currentMultiplier;
+    private int _comboHits;
+    private bool _isComboing;
+    private int _incomingScore;
 
     private void OnEnable()
     {
-        BulletTarget.OnTargetHit += TargetHit;
+        Debug.Log("[GameMaster] OnEnable() called - Subscribing to events");
+        
+        BulletTarget.OnTargetHit += HandleTargetHit;
+        
         StateMaster.Instance.OnGameStarted += OnGameStarted;
+        StateMaster.Instance.OnGameResumed += OnGameResumed;
         StateMaster.Instance.OnGameOver += OnGameOver;
     }
 
     private void OnDisable()
     {
-        BulletTarget.OnTargetHit -= TargetHit;
-        StateMaster.Instance.OnGameStarted -= OnGameStarted;
-        StateMaster.Instance.OnGameOver -= OnGameOver;
+        BulletTarget.OnTargetHit -= HandleTargetHit;
+        
+        if (StateMaster.Instance != null)
+        {
+            StateMaster.Instance.OnGameStarted -= OnGameStarted;
+            StateMaster.Instance.OnGameResumed -= OnGameResumed;
+            StateMaster.Instance.OnGameOver -= OnGameOver;
+        }
     }
 
     private void OnGameStarted()
     {
-        currGameDuration = gameDuration;
-        currComboDuration = comboDuration;
+        _currentGameDuration = gameDuration;
+        _currentComboDuration = comboDuration;
         _score = 0;
-        setDisplay();
+        _currentMultiplier = 1f;
+        _comboHits = 0;
+        _isComboing = false;
+        UpdateDisplay();
         Debug.Log("Game Started - Timers Reset");
+    }
+
+    private void OnGameResumed()
+    {
+        Debug.Log("Game Resumed - Timers Continue");    
     }
 
     private void OnGameOver()
     {
         Debug.Log("Game Over - Submitting Score");
-        // Calculate total combos and final multiplier for submission
-        int totalCombos = comboHits;
-        float finalMultiplier = currMultiplicator;
-        Instance.SubmitScore((int)_score, totalCombos, finalMultiplier);
+        gameOverManager.Setup(Mathf.RoundToInt(_score), _comboHits, _currentMultiplier);
     }
 
-    private void TargetHit(int addScore)
+    public void OnSubmitScoreClicked(){
+        SubmitScore();
+    }
+
+    private void HandleTargetHit(int addScore)
     {
         Debug.Log("Hit Scored, incrementing Score");
-        incomingScore = addScore;
-        currComboDuration = comboDuration;
-        GameLogic();
-
+        _incomingScore = addScore;
+        _currentComboDuration = comboDuration;
+        ProcessComboLogic();
     }
 
-    private void GameLogic()
+    private void ProcessComboLogic()
     {
-        isComboing = true;
+        _isComboing = true;
+        _comboHits++;
 
-        comboHits += 1;
-        Debug.Log($"Combo Hits = {comboHits}");
+        Debug.Log($"Combo Hits = {_comboHits}");
 
-        int? _chits = null;
-        float? _mult = null;
-
-        if (comboHits > 1)
+        if (_comboHits > 1 && _comboHits % comboThreshold == 0)
         {
-            _chits = comboHits;
-            if (comboHits % comboThreshold == 0) currMultiplicator += comboMultiplicator;
-        }
-        ;
-
-        _mult = currMultiplicator;
-        _score += incomingScore * _mult.Value;
-
-        setDisplay(_chits, _mult);
-
-
-    }
-
-    private void setDisplay(int? cHits = null, float? multi = null)
-    {
-        if (cHits.HasValue)
-        {
-            uimanager.SetComboDisplay(cHits.Value);
-            uimanager.initComboSlider(comboDuration);
+            _currentMultiplier += comboMultiplierIncrement;
         }
 
-        else uimanager.DisableComboDisplay();
+        _score += _incomingScore * _currentMultiplier;
 
-        if (multi.HasValue) uimanager.SetMultiplierDisplay(multi.Value);
-        else uimanager.DisableMultiplierDisplay();
-
-        uimanager.SetScoreDisplay(_score);
-
+        UpdateDisplay();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void UpdateDisplay()
     {
-        if (!StateMaster.Instance.IsPlaying) return;
+        if (_comboHits > 0)
+        {
+            uiManager.SetComboDisplay(_comboHits);
+            uiManager.InitComboSlider(comboDuration);
+        }
+        else
+        {
+            uiManager.DisableComboDisplay();
+        }
 
-        if (currGameDuration <= 0)
+        uiManager.SetMultiplierDisplay(_currentMultiplier);
+        uiManager.SetScoreDisplay(_score);
+    }
+
+    private void Update()
+    {
+        if (StateMaster.Instance == null || !StateMaster.Instance.IsPlaying) return;
+
+        if (_currentGameDuration <= 0)
         {
             Debug.Log("Game Over!");
             StateMaster.Instance.TriggerGameOver();
             return;
         }
 
-        if (currGameDuration > 0)
+        _currentGameDuration -= Time.unscaledDeltaTime;
+        uiManager.SetTimeDisplay(_currentGameDuration);
+
+        if (_isComboing && _currentComboDuration > 0)
         {
-            currGameDuration -= Time.unscaledDeltaTime;
-            uimanager.SetTimeDisplay(currGameDuration);
-            Debug.Log($"Time Remaining: {currGameDuration}");
+            _currentComboDuration -= Time.unscaledDeltaTime;
+            uiManager.SetComboSlider(_currentComboDuration);
         }
 
-        if (isComboing && currComboDuration > 0)
+        if (_isComboing && _currentComboDuration <= 0)
         {
-            currComboDuration -= Time.unscaledDeltaTime;
-            uimanager.SetComboSlider(currComboDuration);
-        }
-
-        if (isComboing && currComboDuration <= 0)
-        {
-            Debug.Log($"Combo Over! RESETTING");
-            isComboing = false;
-            setDisplay(null, null);
-            uimanager.DisableComboSlider();
-            currComboDuration = comboDuration;
-            comboHits = 0;
-            currMultiplicator = 1;
+            Debug.Log("Combo Over! RESETTING");
+            ResetCombo();
         }
     }
 
-    public void SubmitScore(int finalScore, int totalCombos, float finalMultiplier)
+    private void ResetCombo()
     {
-        leaderboard.AddEntry(StateMaster.Instance.PlayerName, (int)_score);
-        Debug.Log($"Submitting Score: {finalScore} with Combos: {totalCombos} and Multiplier: {finalMultiplier} for Player: {StateMaster.Instance.PlayerName}");
+        _isComboing = false;
+        uiManager.DisableComboDisplay();
+        uiManager.DisableMultiplierDisplay();
+        uiManager.DisableComboSlider();
+
+        _currentComboDuration = comboDuration;
+        _comboHits = 0;
+        _currentMultiplier = 1f;
+    }
+
+    private void SubmitScore()
+    {
+        int finalScore = Mathf.RoundToInt(_score);
+        string playerName = StateMaster.Instance != null ? StateMaster.Instance.PlayerName : "Unknown";
+        
+        if (leaderboard == null)
+        {
+            Debug.LogError("[GameMaster] Leaderboard reference not assigned! Cannot submit score.");
+            return;
+        }
+        
+        Debug.Log($"[GameMaster] Submitting score: {finalScore} for player: {playerName}");
+        leaderboard.AddEntry(playerName, finalScore);
+        Debug.Log($"[GameMaster] Score submitted successfully");
     }
 }

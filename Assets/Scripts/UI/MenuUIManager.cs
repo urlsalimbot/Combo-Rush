@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -8,75 +7,120 @@ public class MenuUIManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private Button startButton;
     [SerializeField] private Button resumeButton;
-    [SerializeField] private Button restartButton;
     [SerializeField] private Button mainMenuButton;
     [SerializeField] private Leaderboard leaderboard;
-    [SerializeField] private GameObject leaderboardpanel;
+    [SerializeField] private GameObject leaderboardPanel;
 
-
-    public void Setup()
+    private void Awake()
     {
-        if (!StateMaster.Instance.IsPlaying)
+        // Ensure StateMaster exists
+        var stateMaster = StateMaster.Instance;
+        if (stateMaster == null)
         {
-            startButton.gameObject.SetActive(true);
-            resumeButton.gameObject.SetActive(false);
-            restartButton.gameObject.SetActive(false);
-            mainMenuButton.gameObject.SetActive(false);
+            Debug.LogError("[MenuUIManager] StateMaster not found in scene!");
         }
-        if (StateMaster.Instance.IsPlaying)
+    }
+
+    private void OnEnable()
+    {
+        StateMaster.Instance.OnStateChanged += Setup;
+    }
+
+    private void OnDisable()
+    {
+        if (StateMaster.Instance != null)
         {
-            Debug.Log("Configuring Menu for Paused State");
-            startButton.gameObject.SetActive(false);
-            resumeButton.gameObject.SetActive(true);
-            restartButton.gameObject.SetActive(true);
-            mainMenuButton.gameObject.SetActive(true);
+            StateMaster.Instance.OnStateChanged -= Setup;
         }
+    }
+
+    private void Setup(GameState newState)
+    {
+        switch (newState)
+        {
+            case GameState.Unstarted:
+                ConfigureMenuForUnstarted();
+                break;
+
+            case GameState.Paused:
+                ConfigureMenuForPaused();
+                break;
+
+            case GameState.Playing:
+                HideMenu();
+                break;
+
+            default:
+                HideMenu();
+                break;
+        }
+    }
+
+    private void ConfigureMenuForUnstarted()
+    {
+        startButton.gameObject.SetActive(true);
+        resumeButton.gameObject.SetActive(false);
+        mainMenuButton.gameObject.SetActive(false);
+    }
+
+    private void ConfigureMenuForPaused()
+    {
+        Debug.Log("Configuring Menu for Paused State");
+        startButton.gameObject.SetActive(false);
+        resumeButton.gameObject.SetActive(true);
+        mainMenuButton.gameObject.SetActive(true);
+    }
+
+    private void HideMenu()
+    {
+        gameObject.SetActive(false);
     }
 
     public void OnStartClicked()
     {
-        StateMaster.Instance.StartGame();
+        if (StateMaster.Instance != null)
+        {
+            StateMaster.Instance.StartGame();
+        }
     }
 
     public void OnResumeClicked()
     {
-        // Assuming your PauseManager has a Resume or Toggle function
-        StateMaster.Instance.Resume();
+        if (StateMaster.Instance != null)
+        {
+            StateMaster.Instance.Resume();
+        }
     }
 
-    public void OnRestartClicked()
-    {
-        // Reset time scale just in case your manager doesn't do it on scene load
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-    }
     public void OnLeaderboardClicked()
     {
-        if (leaderboardpanel.activeSelf)
+        if (leaderboardPanel.activeSelf)
         {
-            leaderboardpanel.SetActive(false);
-            return; 
+            leaderboardPanel.SetActive(false);
+            return;
         }
-        ; // Prevent multiple opens  
+
+        if (leaderboard == null)
+        {
+            Debug.LogError("[MenuUIManager] Leaderboard reference not assigned!");
+            return;
+        }
+
+        Debug.Log("[MenuUIManager] Refreshing leaderboard display...");
         leaderboard.RefreshDisplay();
-        leaderboardpanel.SetActive(true);
+        leaderboardPanel.SetActive(true);
     }
 
     public void OnMainMenuClicked()
     {
+        Debug.Log("[MenuUIManager] OnMainMenuClicked - Reloading scene...");
         Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name); // Assuming main menu is the first scene
+        UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
     }
 
     public void OnQuitClicked()
     {
         Debug.Log("Quitting Game...");
         Application.Quit();
-    }
-
-    // Call this from your PauseManager when the Escape key is hit
-    public void ToggleUI(bool isPaused)
-    {
-        gameObject.SetActive(isPaused);
     }
 }

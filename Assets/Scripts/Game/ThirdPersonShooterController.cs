@@ -1,93 +1,117 @@
 using UnityEngine;
 using Unity.Cinemachine;
-using System;
 using StarterAssets;
 
 public class ThirdPersonShooterController : MonoBehaviour
 {
+    [Header("Aim Settings")]
     [SerializeField] private CinemachineCamera aimVirtualCamera;
     [SerializeField] private float normalSens = 1.0f;
     [SerializeField] private float aimSens = 0.65f;
-    [SerializeField] private float normalTime = 1.0f;
-    [SerializeField] private float slowMoTime = 0.25f;
+
+    [Header("Time Settings")]
+    [SerializeField] private float normalTimeScale = 1.0f;
+    [SerializeField] private float slowMoTimeScale = 0.25f;
+    [SerializeField] private float fixedDeltaTimeMultiplier = 0.02f;
+
+    [Header("Raycast Settings")]
     [SerializeField] private LayerMask aimColliderMask = new LayerMask();
+    [SerializeField] private float raycastDistance = 999f;
     [SerializeField] private Transform debugTransform;
 
-
+    [Header("Fire Settings")]
     [SerializeField] private float fireCooldownDuration = 1.0f;
 
-    private float currFireCooldown = 0f;
-    private ThirdPersonController thirdPersonController;
-    private StarterAssetsInputs starterAssetsInputs;
-
+    private float _currentFireCooldown;
+    private ThirdPersonController _thirdPersonController;
+    private StarterAssetsInputs _starterAssetsInputs;
+    private Camera _mainCamera;
 
     private void Awake()
     {
-        thirdPersonController = GetComponent<ThirdPersonController>();
-        starterAssetsInputs = GetComponent<StarterAssetsInputs>();
+        _thirdPersonController = GetComponent<ThirdPersonController>();
+        _starterAssetsInputs = GetComponent<StarterAssetsInputs>();
+        _mainCamera = Camera.main;
+
+        // Ensure StateMaster exists
+        var stateMaster = StateMaster.Instance;
+        if (stateMaster == null)
+        {
+            Debug.LogError("[ThirdPersonShooterController] StateMaster not found in scene!");
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        if (!StateMaster.Instance.IsPlaying) return;
+        HandlePauseInput();
 
-        if (starterAssetsInputs.pause)
+        if (StateMaster.Instance == null || !StateMaster.Instance.IsPlaying)
         {
-            StateMaster.Instance.Pause();
             return;
         }
 
+        HandleAiming();
+        HandleFiring();
+    }
 
-
-        if (starterAssetsInputs.aim)
+    private void HandlePauseInput()
+    {
+        if (_starterAssetsInputs.pause && StateMaster.Instance != null)
         {
-            aimVirtualCamera.gameObject.SetActive(true);
-            thirdPersonController.SetSensitivity(aimSens);
-            Time.timeScale = slowMoTime;
-            Time.fixedDeltaTime = 0.02f * Time.timeScale;
-
+            _starterAssetsInputs.pause = false;
+            StateMaster.Instance.Pause();
         }
-        else
+    }
+
+    private void HandleAiming()
+    {
+        bool isAiming = _starterAssetsInputs.aim;
+
+        aimVirtualCamera.gameObject.SetActive(isAiming);
+        _thirdPersonController.SetSensitivity(isAiming ? aimSens : normalSens);
+
+        float targetTimeScale = isAiming ? slowMoTimeScale : normalTimeScale;
+        Time.timeScale = targetTimeScale;
+        Time.fixedDeltaTime = fixedDeltaTimeMultiplier * Time.timeScale;
+    }
+
+    private void HandleFiring()
+    {
+        if (_currentFireCooldown > 0)
         {
-            aimVirtualCamera.gameObject.SetActive(false);
-            thirdPersonController.SetSensitivity(normalSens);
-            Time.timeScale = normalTime;
-            Time.fixedDeltaTime = 0.02f * Time.timeScale;
-
+            _starterAssetsInputs.fire = false;
+            _currentFireCooldown -= Time.unscaledDeltaTime;
+            return;
         }
 
-        if (currFireCooldown > 0)
-        {
-            starterAssetsInputs.fire = false;
-            currFireCooldown -= Time.unscaledDeltaTime;
-
-
-        }
-
-        // Check for input and if the cooldown is ready
-        if (starterAssetsInputs.fire && currFireCooldown <= 0)
+        if (_starterAssetsInputs.fire && StateMaster.Instance.IsPlaying)
         {
             FireRay();
-            // Reset the cooldown timer
-            currFireCooldown = fireCooldownDuration;
-
+            _currentFireCooldown = fireCooldownDuration;
         }
     }
 
     private void FireRay()
     {
-        Vector2 screenCenterPoint = new Vector2(Screen.width / 2f, Screen.height / 2f);
-        Ray ray = Camera.main.ScreenPointToRay(screenCenterPoint);
-        // Transform hitTransform = null;
-        if (Physics.Raycast(ray, out RaycastHit raycastHit, 999f, aimColliderMask))
+        if (_mainCamera == null)
         {
-            debugTransform.position = raycastHit.point;
+            Debug.LogWarning("Main camera not found, cannot fire raycast");
+            return;
+        }
 
-            // 2. Use TryGetComponent for better performance and safety
+        Vector2 screenCenterPoint = new Vector2(Screen.width / 2f, Screen.height / 2f);
+        Ray ray = _mainCamera.ScreenPointToRay(screenCenterPoint);
+
+        if (Physics.Raycast(ray, out RaycastHit raycastHit, raycastDistance, aimColliderMask))
+        {
+            if (debugTransform != null)
+            {
+                debugTransform.position = raycastHit.point;
+            }
+
             if (raycastHit.transform.TryGetComponent<BulletTarget>(out BulletTarget target))
             {
-                target.OnRaycastHit(); // Matches the public method name
+                target.OnRaycastHit();
             }
         }
     }

@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Singletons
 {
@@ -10,11 +9,7 @@ namespace Singletons
     public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {
         private static T _instance;
-
-        /// <summary>
-        /// Override this to make the singleton scene-specific (not persist across scene loads).
-        /// </summary>
-        protected virtual bool PersistAcrossScenes => true;
+        private static readonly object _lock = new object();
 
         public static T Instance
         {
@@ -22,11 +17,12 @@ namespace Singletons
             {
                 if (_instance == null)
                 {
-                    _instance = FindFirstObjectByType<T>();
-                    if (_instance == null)
+                    lock (_lock)
                     {
-                        GameObject go = new GameObject(typeof(T).Name);
-                        _instance = go.AddComponent<T>();
+                        if (_instance == null)
+                        {
+                            _instance = FindFirstObjectByType<T>();
+                        }
                     }
                 }
                 return _instance;
@@ -56,5 +52,10 @@ namespace Singletons
                 _instance = null;
             }
         }
+
+        /// <summary>
+        /// Override this to make the singleton scene-specific (not persist across scene loads).
+        /// </summary>
+        protected virtual bool PersistAcrossScenes => true;
     }
 }
