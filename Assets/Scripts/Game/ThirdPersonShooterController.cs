@@ -99,8 +99,9 @@ public class ThirdPersonShooterController : MonoBehaviour
             return;
         }
 
-        Vector2 screenCenterPoint = new Vector2(Screen.width / 2f, Screen.height / 2f);
-        Ray ray = _mainCamera.ScreenPointToRay(screenCenterPoint);
+        Vector3 fireOrigin = _mainCamera.transform.position;
+        Vector3 aimDirection = _mainCamera.transform.forward;
+        Ray ray = new Ray(fireOrigin, aimDirection);
 
         if (Physics.Raycast(ray, out RaycastHit raycastHit, raycastDistance, aimColliderMask))
         {
