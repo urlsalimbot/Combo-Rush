@@ -109,6 +109,7 @@ namespace StarterAssets
         private CharacterController _controller;
         private StarterAssetsInputs _input;
         private GameObject _mainCamera;
+        private PlayerMovementExtension _movementExtension;
 
         private const float _threshold = 0.01f;
 
@@ -143,6 +144,7 @@ namespace StarterAssets
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
             _input = GetComponent<StarterAssetsInputs>();
+            _movementExtension = GetComponent<PlayerMovementExtension>();
 #if ENABLE_INPUT_SYSTEM
             _playerInput = GetComponent<PlayerInput>();
 #else
@@ -221,6 +223,12 @@ namespace StarterAssets
 
         private void Move()
         {
+            // If dashing or wall bouncing, let PlayerMovementExtension handle movement
+            if (_movementExtension != null && (_movementExtension.IsDashing || _movementExtension.IsWallBouncing))
+            {
+                return;
+            }
+
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
 

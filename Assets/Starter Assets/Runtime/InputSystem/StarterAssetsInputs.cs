@@ -15,6 +15,7 @@ namespace StarterAssets
 		public bool aim;
 		public bool fire;
 		public bool pause;
+		public bool dash;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -59,6 +60,10 @@ namespace StarterAssets
 		{
 			PauseInput(value.isPressed);
 		}
+		public void OnDash(InputValue value)
+		{
+			DashInput(value.isPressed);
+		}
 #endif
 
 
@@ -93,6 +98,10 @@ namespace StarterAssets
 		public void PauseInput(bool newPauseState)
 		{
 			pause = newPauseState;
+		}
+		public void DashInput(bool newDashState)
+		{
+			dash = newDashState;
 		}
 
 		private void OnApplicationFocus(bool hasFocus)

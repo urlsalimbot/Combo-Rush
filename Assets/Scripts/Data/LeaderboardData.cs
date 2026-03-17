@@ -11,10 +11,10 @@ public class LeaderboardData
 public class ScoreEntry
 {
     public string PlayerName;
-    public int Score;
+    public float Score;
     public string Date;
 
-    public ScoreEntry(string name, int score)
+    public ScoreEntry(string name, float score)
     {
         PlayerName = name;
         Score = score;

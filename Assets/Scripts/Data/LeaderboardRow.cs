@@ -15,7 +15,7 @@ public class LeaderboardRow : MonoBehaviour
         if (dateText == null) Debug.LogError("[LeaderboardRow] dateText not assigned!");
     }
 
-    public void Setup(string name, int score, string datePlayed)
+    public void Setup(string name, float score, string datePlayed)
     {
         Debug.Log($"[LeaderboardRow] Setup called: {name} - {score} - {datePlayed}");
         

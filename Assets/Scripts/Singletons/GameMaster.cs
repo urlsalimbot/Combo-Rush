@@ -29,11 +29,9 @@ public class GameMaster : Singleton<GameMaster>
 
     private void OnEnable()
     {
-        Debug.Log("[GameMaster] OnEnable() called - Subscribing to events");
-        
         BulletTarget.OnTargetHit += HandleTargetHit;
         ThirdPersonShooterController.OnTargetMiss += HandleTargetMiss;
-        
+
         StateMaster.Instance.OnGameStarted += OnGameStarted;
         StateMaster.Instance.OnGameResumed += OnGameResumed;
         StateMaster.Instance.OnGameOver += OnGameOver;
@@ -44,14 +42,11 @@ public class GameMaster : Singleton<GameMaster>
     private void OnDisable()
     {
         BulletTarget.OnTargetHit -= HandleTargetHit;
-        ThirdPersonShooterController.OnTargetMiss += HandleTargetMiss;
-        
-        if (StateMaster.Instance != null)
-        {
-            StateMaster.Instance.OnGameStarted -= OnGameStarted;
-            StateMaster.Instance.OnGameResumed -= OnGameResumed;
-            StateMaster.Instance.OnGameOver -= OnGameOver;
-        }
+        ThirdPersonShooterController.OnTargetMiss -= HandleTargetMiss;
+
+        StateMaster.Instance.OnGameStarted -= OnGameStarted;
+        StateMaster.Instance.OnGameResumed -= OnGameResumed;
+        StateMaster.Instance.OnGameOver -= OnGameOver;
     }
 
     private void OnGameStarted()
@@ -63,28 +58,28 @@ public class GameMaster : Singleton<GameMaster>
         _comboHits = 0;
         _isComboing = false;
         UpdateDisplay();
-        Debug.Log("Game Started - Timers Reset");
     }
 
     private void OnGameResumed()
     {
-        Debug.Log("Game Resumed - Timers Continue");    
+        Debug.Log("Game Resumed - Timers Continue");
     }
 
     private void OnGameOver()
     {
-        Debug.Log("Game Over - Submitting Score");
-        gameOverManager.Setup(Mathf.RoundToInt(_score), _comboHits, _currentMultiplier);
+        gameOverManager.Setup(_score, _comboHits, _currentMultiplier);
+        SubmitScore();
+
+        Debug.Log($"Submitting Score: {_score} for Player: {StateMaster.Instance.PlayerName}");
     }
 
-        private void HandleTargetMiss()
+    private void HandleTargetMiss()
     {
         _currentComboDuration = 0f;
     }
 
     private void HandleTargetHit(int addScore)
     {
-        Debug.Log("Hit Scored, incrementing Score");
         _incomingScore = addScore;
         _currentComboDuration = comboDuration;
         ProcessComboLogic();
@@ -94,8 +89,6 @@ public class GameMaster : Singleton<GameMaster>
     {
         _isComboing = true;
         _comboHits++;
-
-        Debug.Log($"Combo Hits = {_comboHits}");
 
         if (_comboHits > 1 && _comboHits % comboThreshold == 0)
         {
@@ -164,17 +157,8 @@ public class GameMaster : Singleton<GameMaster>
 
     public void SubmitScore()
     {
-        int finalScore = Mathf.RoundToInt(_score);
+        float finalScore = Mathf.Floor(_score * 100f) / 100f; // Round to 2 decimal places
         string playerName = StateMaster.Instance != null ? StateMaster.Instance.PlayerName : "Unknown";
-        
-        if (leaderboard == null)
-        {
-            Debug.LogError("[GameMaster] Leaderboard reference not assigned! Cannot submit score.");
-            return;
-        }
-        
-        Debug.Log($"[GameMaster] Submitting score: {finalScore} for player: {playerName}");
         leaderboard.AddEntry(playerName, finalScore);
-        Debug.Log($"[GameMaster] Score submitted successfully");
     }
 }

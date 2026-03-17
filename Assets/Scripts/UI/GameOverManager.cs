@@ -8,7 +8,6 @@ public class GameOverManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField] private TextMeshProUGUI combosText;
     [SerializeField] private TextMeshProUGUI multiplierText;
-    [SerializeField] private Button submitButton;
 
     private void Awake()
     {
@@ -38,26 +37,10 @@ public class GameOverManager : MonoBehaviour
         gameObject.SetActive(true);
     }
 
-    public void Setup(int finalScore, int totalCombos, float finalMultiplier)
+    public void Setup(float finalScore, int totalCombos, float finalMultiplier)
     {
         scoreText.text = finalScore.ToString();
         combosText.text = totalCombos.ToString();
         multiplierText.text = finalMultiplier.ToString("F2");
-    }
-
-    public void OnSubmitScoreClicked()
-    {
-        if (submitButton != null)
-        {
-            GameMaster.Instance.SubmitScore();
-            submitButton.interactable = false;
-            TextMeshProUGUI buttonText = submitButton.GetComponentInChildren<TextMeshProUGUI>();
-            if (buttonText != null)
-            {
-                buttonText.text = "Submitted!";
-            }
-        }
-
-        Debug.Log($"Submitting Score: {scoreText.text} for Player: {StateMaster.Instance.PlayerName}");
     }
 }

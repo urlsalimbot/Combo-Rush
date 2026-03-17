@@ -29,7 +29,7 @@ public class Leaderboard : MonoBehaviour
         Debug.Log($"[Leaderboard] Loaded {_data.Entries.Count} entries");
     }
 
-    public void AddEntry(string name, int score)
+    public void AddEntry(string name, float score)
     {
         Debug.Log($"[Leaderboard] Adding entry: {name} - {score}");
         
@@ -120,22 +120,6 @@ public class Leaderboard : MonoBehaviour
 
     public void RefreshDisplay()
     {
-        Debug.Log($"[Leaderboard] RefreshDisplay called - Entries: {_data.Entries.Count}");
-        
-        if (container == null)
-        {
-            Debug.LogError("[Leaderboard] Container not assigned! Cannot refresh display.");
-            return;
-        }
-        
-        if (rowPrefab == null)
-        {
-            Debug.LogError("[Leaderboard] Row prefab not assigned! Cannot refresh display.");
-            return;
-        }
-
-        // Clear old rows
-        Debug.Log($"[Leaderboard] Clearing {container.childCount} existing rows");
         foreach (Transform child in container)
         {
             Destroy(child.gameObject);
@@ -143,7 +127,6 @@ public class Leaderboard : MonoBehaviour
 
         if (_data.Entries.Count == 0)
         {
-            Debug.Log("[Leaderboard] No entries to display");
             return;
         }
 
@@ -151,7 +134,7 @@ public class Leaderboard : MonoBehaviour
         for (int i = 0; i < _data.Entries.Count; i++)
         {
             var entry = _data.Entries[i];
-            
+    
             GameObject go = Instantiate(rowPrefab, container);
             
             LeaderboardRow row = go.GetComponent<LeaderboardRow>();
