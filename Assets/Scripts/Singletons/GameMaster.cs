@@ -32,15 +32,19 @@ public class GameMaster : Singleton<GameMaster>
         Debug.Log("[GameMaster] OnEnable() called - Subscribing to events");
         
         BulletTarget.OnTargetHit += HandleTargetHit;
+        ThirdPersonShooterController.OnTargetMiss += HandleTargetMiss;
         
         StateMaster.Instance.OnGameStarted += OnGameStarted;
         StateMaster.Instance.OnGameResumed += OnGameResumed;
         StateMaster.Instance.OnGameOver += OnGameOver;
     }
 
+
+
     private void OnDisable()
     {
         BulletTarget.OnTargetHit -= HandleTargetHit;
+        ThirdPersonShooterController.OnTargetMiss += HandleTargetMiss;
         
         if (StateMaster.Instance != null)
         {
@@ -73,8 +77,9 @@ public class GameMaster : Singleton<GameMaster>
         gameOverManager.Setup(Mathf.RoundToInt(_score), _comboHits, _currentMultiplier);
     }
 
-    public void OnSubmitScoreClicked(){
-        SubmitScore();
+        private void HandleTargetMiss()
+    {
+        _currentComboDuration = 0f;
     }
 
     private void HandleTargetHit(int addScore)
@@ -157,7 +162,7 @@ public class GameMaster : Singleton<GameMaster>
         _currentMultiplier = 1f;
     }
 
-    private void SubmitScore()
+    public void SubmitScore()
     {
         int finalScore = Mathf.RoundToInt(_score);
         string playerName = StateMaster.Instance != null ? StateMaster.Instance.PlayerName : "Unknown";

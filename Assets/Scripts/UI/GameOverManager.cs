@@ -49,8 +49,8 @@ public class GameOverManager : MonoBehaviour
     {
         if (submitButton != null)
         {
+            GameMaster.Instance.SubmitScore();
             submitButton.interactable = false;
-
             TextMeshProUGUI buttonText = submitButton.GetComponentInChildren<TextMeshProUGUI>();
             if (buttonText != null)
             {

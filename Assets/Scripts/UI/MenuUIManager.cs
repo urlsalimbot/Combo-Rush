@@ -36,6 +36,7 @@ public class MenuUIManager : MonoBehaviour
 
     private void Setup(GameState newState)
     {
+        Debug.Log($"Menu UI Manager: {newState}");
         switch (newState)
         {
             case GameState.Unstarted:
@@ -47,6 +48,8 @@ public class MenuUIManager : MonoBehaviour
                 break;
 
             case GameState.Playing:
+                Debug.Log("Hiding Menu");
+
                 HideMenu();
                 break;
 
@@ -65,7 +68,6 @@ public class MenuUIManager : MonoBehaviour
 
     private void ConfigureMenuForPaused()
     {
-        Debug.Log("Configuring Menu for Paused State");
         startButton.gameObject.SetActive(false);
         resumeButton.gameObject.SetActive(true);
         mainMenuButton.gameObject.SetActive(true);
@@ -74,6 +76,7 @@ public class MenuUIManager : MonoBehaviour
     private void HideMenu()
     {
         gameObject.SetActive(false);
+        leaderboardPanel.SetActive(false);
     }
 
     public void OnStartClicked()

@@ -151,7 +151,6 @@ public class Leaderboard : MonoBehaviour
         for (int i = 0; i < _data.Entries.Count; i++)
         {
             var entry = _data.Entries[i];
-            Debug.Log($"[Leaderboard] Creating row {i+1}/{_data.Entries.Count} for {entry.PlayerName}");
             
             GameObject go = Instantiate(rowPrefab, container);
             

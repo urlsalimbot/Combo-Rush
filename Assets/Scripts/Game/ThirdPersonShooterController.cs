@@ -1,9 +1,12 @@
 using UnityEngine;
 using Unity.Cinemachine;
 using StarterAssets;
+using System;
 
 public class ThirdPersonShooterController : MonoBehaviour
 {
+    public static event Action OnTargetMiss;
+
     [Header("Aim Settings")]
     [SerializeField] private CinemachineCamera aimVirtualCamera;
     [SerializeField] private float normalSens = 1.0f;
@@ -113,6 +116,11 @@ public class ThirdPersonShooterController : MonoBehaviour
             if (raycastHit.transform.TryGetComponent<BulletTarget>(out BulletTarget target))
             {
                 target.OnRaycastHit();
+            }
+            else
+            {
+                Debug.Log("Player Missed");
+                OnTargetMiss.Invoke();
             }
         }
     }

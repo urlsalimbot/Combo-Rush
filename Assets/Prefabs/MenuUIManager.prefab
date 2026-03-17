@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Quit Game?
+  m_text: Quit Game
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -270,7 +270,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   startButton: {fileID: 6861165198269096276}
   resumeButton: {fileID: 6311768134237203572}
-  restartButton: {fileID: 0}
   mainMenuButton: {fileID: 1712302320782394218}
   leaderboard: {fileID: 0}
   leaderboardPanel: {fileID: 0}
