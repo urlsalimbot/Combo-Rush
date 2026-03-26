@@ -36,7 +36,7 @@ public class PlayerMovementExtension : MonoBehaviour
     [SerializeField] private float wallBounceForce = 12f;
 
     [Tooltip("Upward force added when wall bouncing")]
-    [SerializeField] private float wallBounceUpwardForce = 8f;
+    [SerializeField] private float wallBounceUpwardForce = 18f;
 
     [Tooltip("Height to check for wall (relative to player position)")]
     [SerializeField] private float wallCheckHeight = 1f;
@@ -182,13 +182,6 @@ public class PlayerMovementExtension : MonoBehaviour
             _dashDirection = transform.forward;
         }
 
-        // If touching a wall, dash away from wall
-        if (_isTouchingWall && enableWallBounce)
-        {
-            Vector3 awayFromWall = Vector3.Reflect(_dashDirection, _wallNormal).normalized;
-            _dashDirection = awayFromWall;
-        }
-
         // Calculate dash velocity (preserve current vertical velocity for gravity)
         float dashSpeed = 15f * dashSpeedMultiplier;
         _dashVelocity = _dashDirection * dashSpeed;
@@ -254,7 +247,7 @@ public class PlayerMovementExtension : MonoBehaviour
         // Launch in the wall normal direction with slight upward trajectory
         _wallBounceVelocity = _wallNormal * wallBounceForce;
         _wallBounceVelocity.y = wallBounceUpwardForce;
-        _wallBounceTime = 0.15f; // Apply bounce over short duration
+        _wallBounceTime = 0.5f; // Apply bounce over short duration
         _isWallBouncing = true;
 
         _hasWallBouncedThisFrame = true;

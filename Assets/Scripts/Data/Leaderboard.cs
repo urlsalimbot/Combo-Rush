@@ -144,7 +144,7 @@ public class Leaderboard : MonoBehaviour
                 continue;
             }
             
-            row.Setup(entry.PlayerName, entry.Score, entry.Date);
+            row.Setup(i+1, entry.PlayerName, entry.Score, entry.Date);
         }
         
         Debug.Log($"[Leaderboard] Displayed {_data.Entries.Count} entries");
